@@ -6,14 +6,14 @@ const Home = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Bem Vindo!</Text>
+            <Text style={styles.title}>FolhaVerde</Text>
 
             <TouchableOpacity
                 style={styles.button}
                 onPress={() => navigation.navigate('Camera')} >
                 <Icon
                     name="camera"
-                    size={30}
+                    size={20}
                     color="white"
                 />
                 <Text style={styles.buttonText}>Identificar Planta</Text>
@@ -22,7 +22,12 @@ const Home = ({ navigation }) => {
             <TouchableOpacity
                 style={styles.button}
                 onPress={() => navigation.navigate('Dicas')} >
-                <Text style={styles.buttonText}>Ver Dicas</Text>
+                <Icon
+                    name="camera"
+                    size={20}
+                    color="white"
+                />
+                <Text style={styles.buttonText}>Cuidados Por Espécie</Text>
             </TouchableOpacity>
         </View>
     );

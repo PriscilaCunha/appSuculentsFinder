@@ -1,48 +1,62 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, FlatList, ToastAndroid } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ToastAndroid, ActivityIndicator, FlatList } from 'react-native';
 import axios from "axios";
 import * as ImagePicker from "react-native-image-picker";
 import RNFetchBlob from 'rn-fetch-blob';
 
-
-
-const CameraScreen = ({ navigation }) => {
-
+const IdentifyScreen = ({ navigation }) => {
     const fallbackImage = require("../android/app/src/assets/images.jpeg");
+    const resultsJson = {};
 
     const [imageUri, setImageUri] = useState('');
     const [plantData, setPlantData] = useState({});
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        consultPlantByName();
-    }, []);
+    const ResultsItem = ({ title, commonNames, family, description, image }) => (
+        <View style={styles.result}>
+            <Image
+                source={{ uri: image }}
+                style={{ width: 200, height: 200 }}
+            />
+            <Text style={styles.title}>{ title }</Text>
+            <Text>Nome Comum: { commonNames }</Text>
+            <Text>Família: { family }</Text>
+            <Text style={styles.itemText}>{ description }</Text>
+        </View>
+    );
+    const renderItem = ({ item }) => (
+        <Item 
+            title={ item.scientificNameWithoutAuthor }
+            commonNames={ item.commonNames.join(', ') }
+            family={ item.family.scientificName }
+            description={ getPlantDescriptionWiki( item.scientificNameWithoutAuthor )} 
+            image={ fallbackImage } 
+        />
+    );
 
     function imagePickerCallback(data) {
         if (data.didCancel) {
-            console.log('ENVIO CANCELADO');
-            ToastAndroid.show('Envio Cancelado', ToastAndroid.SHORT);
+            console.log('Cancelado');
+            ToastAndroid.show('Cancelado', ToastAndroid.SHORT);
             return;
         }
         if (data.error) {
-            console.log('ERRO:', response.error);
+            console.log('Erro:', response.error);
             ToastAndroid.show('Ocorreu um erro, tente novamente', ToastAndroid.SHORT);
             return;
         }
 
         setImageUri(data.assets[0].uri);
-        console.log('URI DA IMAGEM', data.assets[0].uri);
+        console.log(imageUri);
     }
 
     const identifyPlant = async () => {
-        setLoading(true);
         console.log('ENVIO INICIADO');
-        ToastAndroid.show('Enviando imagem', ToastAndroid.SHORT);
+        ToastAndroid.show('ENVIO INICIADO', ToastAndroid.SHORT);
 
         const formData = new FormData();
-        const uri = imageUri;
-        const imageBlob = await RNFetchBlob.fs.readFile(uri, 'base64');
-        const filename = uri.split('/').pop();
+        const imageBlob = await RNFetchBlob.fs.readFile(imageUri, 'base64');
+        const filename = imageUri.split('/').pop();
         formData.append('organs', 'auto');
         formData.append('images', {
             uri: `data:image/jpeg;base64,${imageBlob}`,
@@ -52,48 +66,42 @@ const CameraScreen = ({ navigation }) => {
 
         try {
             console.log('INICIO DO ENVIO');
-            const apikey = '2b10872BcGty3dTu0dD9n05QPu';
-            const lang = 'en';
+            ToastAndroid.show('INICIO DO ENVIO', ToastAndroid.SHORT);
+            setLoading(true);
 
-            const response = await fetch(`https://my-api.plantnet.org/v2/identify/all?include-related-images=true&no-reject=false&type=kt&lang=${lang}&api-key=${apikey}`, {
+            const response = await fetch('https://my-api.plantnet.org/v2/identify/all?api-key=2b10872BcGty3dTu0dD9n05QPu', {
                 method: 'POST',
                 body: formData,
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            
+
             console.log('RECEBENDO DADOS');
-            ToastAndroid.show('Recebendo dados', ToastAndroid.SHORT);
+            ToastAndroid.show('RECEBENDO DADOS', ToastAndroid.SHORT);
             const responseData = await response.json();
-
-            // const jsonObj = {};
-            // for (let i = 0; i < 6; i++) {
-            //     const chave = `chave${i + 1}`;
-            //     const valor = {
-            //         'Nome' : responseData.results[i].species.scientificNameWithoutAuthor,
-            //         'Score' : responseData.results[i].score
-            //     }
-                
-            //     jsonObj[chave] = valor;
-            // }
             
-            // setPlantData(jsonObj);
-            // console.log('RESULT', jsonObj);
-
-            setPlantData(responseData.results);
-            console.log('RESULT', responseData.results);
+            
+            for (let i = 0; i < 6; i++) {                
+                const key = `result${i + 1}`;
+                const value = {
+                    'Nome' : responseData.results[i].species.scientificNameWithoutAuthor,
+                    'Score' : responseData.results[i].score
+                }
+                resultsJson[key] = value;
+            }
+            console.log('RESULTS', resultsJson);
             setLoading(false);
-
-            //consultPlantByName(responseData);
+            setPlantData( resultsJson );
+            
         } catch (error) {
+            setLoading(false); 
             console.error('ERROR:', error);
             ToastAndroid.show('Erro ao fazer a solicitação, tente novamente', ToastAndroid.SHORT);
-            setLoading(false);
         }
-    };
+    }
 
-    async function consultPlantByName(returnDaApi) {
+    async function getPlantDescriptionWiki(returnDaApi) {
         try {
             //console.log('NOME DA PLANTA 2', nomeDaPlanta);
 
@@ -123,14 +131,6 @@ const CameraScreen = ({ navigation }) => {
 
     }
 
-    const renderItem = ({ item }) => {
-        return (
-            <View style={styles.itemContainer}>
-                <Text style={styles.itemText}>{item.species.scientificNameWithoutAuthor}</Text>
-            </View>
-        );
-    };
-
     return (
         <View>
             <TouchableOpacity
@@ -144,36 +144,44 @@ const CameraScreen = ({ navigation }) => {
 
             <Image
                 source={imageUri ? { uri: imageUri } : fallbackImage}
-                style={styles.image}
+                style={styles.bookCoverImg}
             />
 
             <TouchableOpacity
                 style={styles.button}
                 onPress={() => identifyPlant()} >
-                <Text style={styles.buttonText}>Identificar Planta</Text>
+                <Text style={styles.buttonText}>Enviar Imagem</Text>
             </TouchableOpacity>
 
+            
             {loading ? (
                 <ActivityIndicator size="large" color="#000" style={styles.loading} />
             ) : (
-                <>{plantData !== {} ? (
-                    <View>
-                        <Text>Resultado da API:</Text>
-                        {/* <Text>{JSON.stringify(plantData)}</Text> */}
-
-                        <FlatList
-                            data={plantData}
-                            renderItem={renderItem}
-                            // keyExtractor={(item) => item.gbif.id}
-                            contentContainerStyle={styles.listContainer}
-                        />
-                    </View>
+                <>
+                    {plantData ? (
+                        <View>
+                            <Text>Resultado da API:</Text>
+                            <Text>{JSON.stringify(plantData)}</Text>
+                        </View>
                     ) : (
                         <Text>Nenhum dado disponível.</Text>
-                    )
-                }</>
+                    )}
+                </>
             )}
-            
+
+
+            {/* { !plantData ?
+                <View>
+                    <Text>Carregando...</Text>
+                </View>
+
+                :
+                <FlatList
+                    data={plantData}
+                    renderItem={renderItem}
+                    keyExtractor={item => plantData.species}
+                />
+            } */}
         </View>
     );
 };
@@ -193,7 +201,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         paddingVertical: 8,
     },
-    image: {
+    bookCoverImg: {
         width: 280,
         height: 280,
         alignSelf: "center",
@@ -222,24 +230,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         padding: 10,
     },
-    loading: {
-        alignItems: "center",
-        justifyContent: "center",
-    },
-
-
-    
-    listContainer: {
-        paddingVertical: 10,
-    },
-    itemContainer: {
-        backgroundColor: '#f0f0f0',
-        padding: 10,
-        marginVertical: 5,
-    },
-    itemText: {
-        fontSize: 16,
-    },
 });
 
-export default CameraScreen;
+export default IdentifyScreen;
