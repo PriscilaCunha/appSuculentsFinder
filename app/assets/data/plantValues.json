@@ -1,0 +1,107 @@
+[
+    {
+        "luminosidade": [
+            {
+                "tipoPlanta": "Sombra",
+                "luminosidadeLuxMin": 0,
+                "luminosidadeLuxMax": 200,
+                "descricao": "São plantas que se desenvolvem melhor em áreas com luz indireta ou baixa, como cantos de ambientes."
+            },
+            {
+                "tipoPlanta": "Meia-Sombra",
+                "luminosidadeLuxMin": 201,
+                "luminosidadeLuxMax": 1000,
+                "descricao": "Essas plantas preferem luz filtrada ou luz solar suave durante algumas horas do dia."
+            },
+            {
+                "tipoPlanta": "Luz Indireta",
+                "luminosidadeLuxMin": 1001,
+                "luminosidadeLuxMax": 5000,
+                "descricao": "São plantas que gostam de luz indireta brilhante, mas não toleram a exposição direta ao sol."
+            },
+            {
+                "tipoPlanta": "Luz Direta",
+                "luminosidadeLuxMin": 5001,
+                "luminosidadeLuxMax": 10000,
+                "descricao": "Essas plantas podem se adaptar a uma variedade de níveis de luz e se saem bem em luz média."
+            },
+            {
+                "tipoPlanta": "Sol pleno",
+                "luminosidadeLuxMin": 10001,
+                "luminosidadeLuxMax": 999999,
+                "descricao": "Essas plantas necessitam de muita luz direta para um crescimento saudável e realizar a fotossíntese."
+            }
+        ],
+        "clima": [
+            {
+                "tipoDeClima": "Frio",
+                "temperaturaMin": -10,
+                "temperaturaMax": 20,
+                "descricao": "Plantas que são resistentes ao frio e podem sobreviver a invernos rigorosos com temperaturas abaixo de zero."
+            },
+            {
+                "tipoDeClima": "Montanha",
+                "temperaturaMin": -5,
+                "temperaturaMax": 20,
+                "descricao": "Plantas que crescem em altitudes mais elevadas, onde as temperaturas podem ser mais frias."
+            },
+            {
+                "tipoDeClima": "Temperado",
+                "temperaturaMin": 0,
+                "temperaturaMax": 25,
+                "descricao": "Plantas que podem sobreviver a invernos mais frios e preferem verões moderados."
+            },
+            {
+                "tipoDeClima": "Subtropical",
+                "temperaturaMin": 10,
+                "temperaturaMax": 30,
+                "descricao": "Plantas que se adaptam bem a climas quentes, mas podem tolerar um pouco de frio ocasional."
+
+            },
+            {
+                "tipoDeClima": "Árido",
+                "temperaturaMin": 5,
+                "temperaturaMax": 40,
+                "descricao": "Plantas que se adaptaram a climas áridos e quentes, geralmente encontrados em desertos."
+            },
+            {
+                "tipoDeClima": "Tropical",
+                "temperaturaMin": 20,
+                "temperaturaMax": 35,
+                "descricao": "Essas plantas prosperam em climas quentes e úmidos, preferindo temperaturas mais altas."
+            }
+        ],
+        "rega": [
+            {
+                "tipoDeRega": "Tolerante à Seca",
+                "umidadeSoloMin": 0,
+                "umidadeSoloMax": 30,
+                "descricao": "Plantas que podem sobreviver com pouca água e toleram períodos de seca."
+            },
+            {
+                "tipoDeRega": "Baixa Umidade",
+                "umidadeSoloMin": 20,
+                "umidadeSoloMax": 50,
+                "descricao": "Plantas que preferem solos mais secos e não toleram solos encharcados."
+            },
+            {
+                "tipoDeRega": "Média Umidade",
+                "umidadeSoloMin": 40,
+                "umidadeSoloMax": 70,
+                "descricao": "Plantas que prosperam em solos moderadamente úmidos, mas não em excesso."
+            },
+            {
+                "tipoDeRega": "Alta Umidade",
+                "umidadeSoloMin": 60,
+                "umidadeSoloMax": 90,
+                "descricao": "Plantas que necessitam de solos constantemente úmidos para um bom crescimento."
+            },
+            {
+                "tipoDeRega": "Aquáticas",
+                "umidadeSoloMin": 80,
+                "umidadeSoloMax": 100,
+                "descricao": "Plantas que crescem em áreas permanentemente alagadas, como pântanos e margens de lagos."
+            }
+        ]
+    }
+]

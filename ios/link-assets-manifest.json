@@ -2,10 +2,6 @@
   "migIndex": 1,
   "data": [
     {
-      "path": "app/assets/images/home_background.jpg",
-      "sha1": "acecc9559c5f9267da998debfb217b9bfb751bcd"
-    },
-    {
       "path": "app/assets/fonts/DMSerifDisplay-Italic.ttf",
       "sha1": "ebfa39e71429e48cb35906620f4c98cd69be925b"
     },
@@ -32,6 +28,14 @@
     {
       "path": "app/assets/fonts/folhaverde.ttf",
       "sha1": "1cf651e1a7f6bb8d428b60cf9161bddd5c28ca0c"
+    },
+    {
+      "path": "app/assets/images/home_background.jpg",
+      "sha1": "acecc9559c5f9267da998debfb217b9bfb751bcd"
+    },
+    {
+      "path": "app/assets/images/no_image_available.jpg",
+      "sha1": "fa7c06573ebc6a27f9bea6c803160a450a7cdd3d"
     }
   ]
 }

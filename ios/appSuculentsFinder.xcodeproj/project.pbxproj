@@ -22,6 +22,7 @@
 		1DE61C0B2CB347FFAC613507 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0A1FCA600E2D40F787D7B7A8 /* Inter-Regular.ttf */; };
 		2550029DD5A94EE69C918499 /* home_background.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F476100BFE1242349AB7E7EC /* home_background.jpg */; };
 		733A490DDDF74E948169E758 /* folhaverde.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 55DFFB4897984926ACF96422 /* folhaverde.ttf */; };
+		830CD702E4924E2DB4F15A12 /* no_image_available.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A8FF751FC2FF4B948A1656DE /* no_image_available.jpg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +61,7 @@
 		0A1FCA600E2D40F787D7B7A8 /* Inter-Regular.ttf */ = {isa = PBXFileReference; name = "Inter-Regular.ttf"; path = "../app/assets/fonts/Inter-Regular.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 		F476100BFE1242349AB7E7EC /* home_background.jpg */ = {isa = PBXFileReference; name = "home_background.jpg"; path = "../app/assets/images/home_background.jpg"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 		55DFFB4897984926ACF96422 /* folhaverde.ttf */ = {isa = PBXFileReference; name = "folhaverde.ttf"; path = "../app/assets/fonts/folhaverde.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		A8FF751FC2FF4B948A1656DE /* no_image_available.jpg */ = {isa = PBXFileReference; name = "no_image_available.jpg"; path = "../app/assets/images/no_image_available.jpg"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -176,6 +178,7 @@
 				0A1FCA600E2D40F787D7B7A8 /* Inter-Regular.ttf */,
 				F476100BFE1242349AB7E7EC /* home_background.jpg */,
 				55DFFB4897984926ACF96422 /* folhaverde.ttf */,
+				A8FF751FC2FF4B948A1656DE /* no_image_available.jpg */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -285,6 +288,7 @@
 				1DE61C0B2CB347FFAC613507 /* Inter-Regular.ttf in Resources */,
 				2550029DD5A94EE69C918499 /* home_background.jpg in Resources */,
 				733A490DDDF74E948169E758 /* folhaverde.ttf in Resources */,
+				830CD702E4924E2DB4F15A12 /* no_image_available.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

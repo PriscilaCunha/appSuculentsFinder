@@ -66,3 +66,6 @@ yarn-error.log
 /coverage
 android/app/src/components/componente.js
 screens/CameraScreen copy.js
+
+# Old Code
+/app/_OLD
