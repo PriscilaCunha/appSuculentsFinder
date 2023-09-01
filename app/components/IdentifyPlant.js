@@ -8,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 const IdentifyPlant = ({ imageUri }) => {
     const navigation = useNavigation();
     
+    // Adicionar imagem para resultados sem foto
     const noImage = require('../assets/images/no_image_available.jpg');
 
     const [plantData, setPlantData] = useState({});
@@ -20,8 +21,7 @@ const IdentifyPlant = ({ imageUri }) => {
     const identifyPlant = async () => {
         setLoading(true);
 
-        console.log('ENVIO INICIADO');
-
+        // Dados para envio da solicitação
         const formData = new FormData();
         const imageBlob = await RNFetchBlob.fs.readFile(imageUri, 'base64');
         const filename = imageUri.split('/').pop();
@@ -31,28 +31,30 @@ const IdentifyPlant = ({ imageUri }) => {
             type: 'image/jpeg',
             name: filename,
         });
+        const apikey = '2b10872BcGty3dTu0dD9n05QPu';
+        const lang = 'pt';
 
         try {
             console.log('INICIO DO ENVIO');
-            const apikey = '2b10872BcGty3dTu0dD9n05QPu';
-            const lang = 'pt';
-
             const response = await fetch(`https://my-api.plantnet.org/v2/identify/all?include-related-images=true&no-reject=false&type=kt&lang=${lang}&api-key=${apikey}`, {
                 method: 'POST',
-                body: formData,
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
+                body: formData,
             });
 
-            console.log('RECEBENDO DADOS');
-
+            // Verificar se a requisição foi bem sucedida
             if (!response.ok) {
-                throw new Error('Erro na requisição à API.');
+                //throw new Error('Erro na requisição à API.');
+                return;
             }
 
+            // Pegar os dados
             const responseData = await response.json();
-            console.log('RESULTADO', responseData.results);
+            //console.log('RESULTADO', responseData.results);
+
+            // Verificar se há resultados
             if (responseData.results != null && responseData.results != undefined && responseData.results.length > 0) {
                 setPlantData(responseData.results);
             }
@@ -63,32 +65,35 @@ const IdentifyPlant = ({ imageUri }) => {
             setLoading(false);
             console.error('ERROR:', error);
             ToastAndroid.show('Erro ao fazer a solicitação, tente novamente', ToastAndroid.SHORT);
+        } finally {
+            setLoading(false);
         }
     };
 
+
     const renderItem = ({ item }) => (
         <View style={styles.resultCard}>
-            {item.images && item.images[0] && item.images[0].url && item.images[0].url.s && item.images[0].url.s.length > 0 ? (
-                <Image source={{ uri: item.images[0].url.s }} style={styles.cardImage} />
-            ) : (
-                <Image source={noImage} style={styles.cardImage} />
-            )}
+            <TouchableOpacity onPress={() => navigation.navigate('Detalhes', { item: item })} style={styles.cardImageContainer}>
+                {item.images && item.images[0] && item.images[0].url && item.images[0].url.s && item.images[0].url.s.length > 0 ? (
+                    <Image source={{ uri: item.images[0].url.s }} style={styles.cardImage} />
+                ) : (
+                    <Image source={noImage} style={styles.cardImage} />
+                )}
+            </TouchableOpacity>
 
             <View style={styles.cardContent}>
                 {item.species && item.species.scientificNameWithoutAuthor && item.species.scientificNameWithoutAuthor.length > 0 && (
-                    <Text style={styles.cardTitle}>{item.species.scientificNameWithoutAuthor}</Text>
+                    <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">{item.species.scientificNameWithoutAuthor}</Text>
                 )}
 
                 {item.species && item.species.commonNames && item.species.commonNames.length > 0 && (
-                    Array.isArray(item.species.commonNames)
-                        ? (
-                            <Text style={styles.cardParagraph}>
-                                {item.species.commonNames.slice(0, 2).join(', ')}
-                            </Text>
-                        )
-                        : (
-                            <Text style={styles.cardParagraph}>{item.species.commonNames}</Text>
-                        )
+                    Array.isArray(item.species.commonNames) ? (
+                        <Text style={styles.cardParagraph} numberOfLines={1} ellipsizeMode="tail">
+                            {item.species.commonNames.slice(0, 2).join(', ')}
+                        </Text>
+                    ) : (
+                        <Text style={styles.cardParagraph} numberOfLines={1} ellipsizeMode="tail">{item.species.commonNames}</Text>
+                    )
                 )}
 
                 <View style={styles.cardButtons}>
@@ -108,24 +113,30 @@ const IdentifyPlant = ({ imageUri }) => {
         </View>
     );
 
+
     return (
         loading ? (
             <ActivityIndicator size="large" style={styles.loading} />
         ) : (
-            <>
-                {plantData.length > 0 ? (
+            plantData.length > 0 ? (
+                <>
+                    <Text style={styles.paragraph}>Veja as plantas semelhantes</Text>
+
                     <FlatList 
                         data={plantData}
-                        keyExtractor={(item) => item.scientificName}
+                        keyExtractor={(item, index) => index.toString()}
                         renderItem={renderItem}
-                        style={styles.result} />
-                ) : (
-                    <Text style={styles.paragraph}>Nenhum resultado encontrado. Tente tirar uma nova foto de um ângulo diferente.</Text>
-                )}
-            </>
+                        style={styles.result}
+                    />
+                </>
+            ) : (
+                <Text style={styles.paragraph}>Nenhum resultado encontrado. Tente tirar uma nova foto de um ângulo diferente.</Text>
+            )
         )
     );
 }
+
+
 const styles = StyleSheet.create({
     loading: {
         marginTop: 20,
@@ -134,9 +145,9 @@ const styles = StyleSheet.create({
 
     result: {
         flex: 1,
+        marginVertical: 20,
     },
     resultCard: {
-        alignSelf: 'stretch',
         minHeight: 90,
         display: 'flex',
         flexDirection: 'row',
@@ -151,14 +162,27 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
 
-    cardImage: {
+    cardImageContainer: {
+        flexShrink: 0,
         width: 120,
+        alignSelf: 'stretch',
+        position: 'relative',
+    },
+    cardImage: {
+        width: '100%',
         height: '100%',
+        resizeMode: 'cover',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        right: 0,
     },
 
     cardContent: {
         flex: 1,
         alignSelf: 'center',
+        alignItems: 'flex-start',
         paddingHorizontal: 16,
         paddingVertical: 10,
         marginVertical: 'auto',
@@ -167,13 +191,12 @@ const styles = StyleSheet.create({
     cardTitle: {
         color: '#030712',
         fontFamily: 'DMSerifDisplay-Regular',
-        fontSize: 18,
-        lineHeight: 20,
+        fontSize: 14,
     },
     cardParagraph: {
         color: '#6B7280',
         fontFamily: 'Inter-Regular',
-        fontSize: 14,
+        fontSize: 12,
         fontStyle: 'italic',
     },
 

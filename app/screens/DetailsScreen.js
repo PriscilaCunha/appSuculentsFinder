@@ -1,67 +1,181 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, ActivityIndicator, ScrollView, FlatList, StyleSheet, ToastAndroid } from 'react-native';
-import axios from 'axios';
 import FolhaIcon from '../components/FolhaIcon';
 import GetPlantDetails from '../components/GetPlantDetails';
 
-const DetailsScreen = ({ route }) => {
 
+const DetailsScreen = ({ route, navigation }) => {
     const { item } = route.params;
+    const [detailsFromResults, setDetailsFromResults] = useState({});
     const [loading, setLoading] = useState(false);
+    const [specieDetails, setSpecieDetails] = useState({});
+
+
+    // Pegar detalhes vindo da página anterior
+    const getPlantDetails = () => {
+        console.log('PEGANDO DETALHES...');
+
+        if( item.scientific_name.length > 0 ){
+            // Pega dados vindos da SpeciesScreen
+            setDetailsFromResults({
+                name: item.scientific_name,
+                common_name: item.common_name,
+                image_url: item.image_url
+            });
+        } else if ( item.species.scientificNameWithoutAuthor == 0 ) {
+            // Pega dados vindos da IdentifyPlant
+            setDetailsFromResults({
+                name: item.species.scientificNameWithoutAuthor,
+                common_name: item.species.commonNames,
+                image_url: item.images[0].url.o
+            });
+        } else {
+            // Nenhum resultado
+            setDetailsFromResults({});
+        }
+    }
+
+    // Conectar com API
+    const getPlantCareDetails = async (plantName) => {
+        setLoading(true);
+
+        // Dados para envio da solicitação
+        const data = {
+            plantname: "african violet"
+        };
+
+        try {
+            console.log('INICIO DO ENVIO');
+            const response = await fetch('http://10.0.2.2:3000/plantdetails', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+
+            // Verificar se a requisição foi bem sucedida
+            if (!response.ok) {
+                return;
+            }
+    
+            // Pegar os dados
+            const responseData = await response.json();
+            console.log('DETALHES', responseData);
+
+            // Verificar se há resultados
+            if (Object.keys(responseData).length != 0) {
+                setSpecieDetails(responseData);
+            }
+
+            setLoading(false);
+
+        } catch (error) {
+            setLoading(false);
+            console.error('Erro ao fazer a solicitação POST:', error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        Object.keys(specieDetails).length == 0 ?
+            getPlantCareDetails(detailsFromResults.name) 
+            : null
+        
+    }, []);
 
     return (
-        <ScrollView style={styles.container}>
-            <Image source={{ uri: item.images[0].url.o }} style={styles.image} />
+        Object.keys(detailsFromResults).length == 0 ? (
+            <>
+                <ActivityIndicator size="large" style={styles.loading} />
+                { getPlantDetails() }
+            </>
 
-            <Text style={styles.title}>{item.species.scientificNameWithoutAuthor}</Text>
+        ) : (
+            <View>
+                <Text style={styles.title}>Title: {detailsFromResults.name}</Text>            
+                <Text>{JSON.stringify(detailsFromResults, null, 2)}</Text>
 
-            {item.species && item.species.commonNames && item.species.commonNames.length > 0 && (
-                Array.isArray(item.species.commonNames)
-                    ? (
-                        <Text style={styles.commonNames}>
-                            {item.species.commonNames.slice(0, 2).join(', ')}
-                        </Text>
-                    )
-                    : (
-                        <Text style={styles.commonNames}>{item.species.commonNames}</Text>
-                    )
-            )}
-
-            <View style={styles.gridContainer}>
-                <FlatList
-                    data={gridData}
-                    numColumns={2}
-                    renderItem={({ item }) => (
-                        <View style={styles.gridBox}>
-                            <View style={styles.gridHeader}>
-                                <FolhaIcon style={styles.gridIcon} name={item.icon} />
-                                <Text style={styles.gridTitle}>{item.title}</Text>
-                            </View>
-
-                            <Text style={styles.gridText}>{item.text}</Text>
-                        </View>
-                    )}
-                    keyExtractor={(item, index) => index.toString()}
-                />
+                {loading ? (
+                    <ActivityIndicator size={'large'} style={styles.loading} />
+                ) : (
+                    <Text>{JSON.stringify(specieDetails, null, 2)}</Text>
+                )}
             </View>
+        )
 
-            <Text style={styles.description}>{item.description}</Text>
 
-            {loading ? (
-                <ActivityIndicator />
-            ) : (
-                <>
-                    <Text style={styles.title}>PlantBook</Text>
 
-                    <GetPlantDetails
-                        plantbookSearchTerm={item.species.scientificNameWithoutAuthor.toLowerCase()}
-                    />
-                </>
-            )}
 
-            <Text style={styles.title}>PlantNet</Text>
-            <Text>{JSON.stringify(item, null, 2)}</Text>
-        </ScrollView>
+        // loading ? (
+        //     <ActivityIndicator /> 
+        // ) : (
+        //     <View>
+        //         <Text style={styles.title}>PlantNet</Text>
+        //         <Text>{JSON.stringify(plantScientificName, null, 2)}</Text>
+        //         {/* <Text>{JSON.stringify(detailsFromResults, null, 2)}</Text> */}
+        //         {/* <Text>{JSON.stringify(specieDetails, null, 2)}</Text> */}
+
+        //     </View>
+        // )
+
+
+        // <Text style={styles.title}>PlantBook</Text>
+        // <GetPlantDetails plantName={item.species.scientificNameWithoutAuthor} />
+
+        // <ScrollView style={styles.container}>
+        //     <Image source={{ uri: item.images[0].url.o }} style={styles.image} />
+
+        //     <Text style={styles.title}>{item.species.scientificNameWithoutAuthor}</Text>
+
+        //     {item.species && item.species.commonNames && item.species.commonNames.length > 0 && (
+        //         Array.isArray(item.species.commonNames)
+        //             ? (
+        //                 <Text style={styles.commonNames}>
+        //                     {item.species.commonNames.slice(0, 2).join(', ')}
+        //                 </Text>
+        //             )
+        //             : (
+        //                 <Text style={styles.commonNames}>{item.species.commonNames}</Text>
+        //             )
+        //     )}
+
+        //     <View style={styles.gridContainer}>
+        //         <FlatList
+        //             data={gridData}
+        //             numColumns={2}
+        //             renderItem={({ item }) => (
+        //                 <View style={styles.gridBox}>
+        //                     <View style={styles.gridHeader}>
+        //                         <FolhaIcon style={styles.gridIcon} name={item.icon} />
+        //                         <Text style={styles.gridTitle}>{item.title}</Text>
+        //                     </View>
+
+        //                     <Text style={styles.gridText}>{item.text}</Text>
+        //                 </View>
+        //             )}
+        //             keyExtractor={(item, index) => index.toString()}
+        //         />
+        //     </View>
+
+        //     <Text style={styles.description}>{item.description}</Text>
+
+        //     {loading ? (
+        //         <ActivityIndicator />
+        //     ) : (
+        //         <>
+        //             <Text style={styles.title}>PlantBook</Text>
+
+        //             <GetPlantDetails
+        //                 plantbookSearchTerm={item.species.scientificNameWithoutAuthor.toLowerCase()}
+        //             />
+        //         </>
+        //     )}
+
+        //     <Text style={styles.title}>PlantNet</Text>
+        //     <Text>{JSON.stringify(item, null, 2)}</Text>
+        // </ScrollView>
     );
 };
 

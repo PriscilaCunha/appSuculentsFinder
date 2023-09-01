@@ -2,20 +2,79 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, ActivityIndicator, FlatList, TouchableOpacity } from 'react-native';
 
 import FolhaIcon from "../components/FolhaIcon";
-import GetSpeciesList from '../components/GetSpeciesList';
+// import GetSpeciesList from '../components/GetSpeciesList';
 
 const SpeciesScreen = ({ navigation }) => {
+
     const [speciesList, setSpeciesList] = useState([]);
-    const [filteredSpeciesList, setFilteredSpeciesList] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
     const [searchText, setSearchText] = useState('');
 
-    // Functions for List
-    const handleDataLoaded = (species, loading) => {
-        setSpeciesList(species);
-        setFilteredSpeciesList(species);
-        setLoading(loading);
+
+    const loadMoreItems = async () => {
+        // Evitar múltiplas solicitações
+        if (isLoading) {
+            return;
+        }
+        setIsLoading(true);
+
+        try {
+            console.log('Carregando itens...', currentPage);
+
+            const apikey = 'U1Dh7px20uz1x8mE_auS4t3BQNzCEhbEgS1ToNVjR78';
+            var consultURL = '';
+
+            if (searchText == '') {
+                // Consultar todas
+                consultURL = `https://trefle.io/api/v1/species?token=${apikey}&order[scientific_name]=asc&page=${currentPage}`;
+            } else {
+                // Consultar por pesquisa
+                consultURL = `https://trefle.io/api/v1/species/search?token=${apikey}&order[scientific_name]=asc&q=${searchText}`;
+            }
+
+            const response = await fetch( consultURL, { method: 'GET', } );
+
+            // Verificar se a requisição foi bem sucedida
+            if (!response.ok) {
+                //throw new Error('Erro na requisição à API.');
+                return;
+            }
+
+            // Pegar os dados
+            const responseData = await response.json();
+
+            // Verificar se há resultados
+            if (responseData.meta.total == 0) {
+                setSpeciesList([]);
+                setCurrentPage(1);
+            } else {
+                setSpeciesList(prevSpeciesList => [...prevSpeciesList, ...responseData.data]);
+                setCurrentPage(currentPage + 1);
+            }
+
+        } catch (error) {
+            console.error('ERROR:', error);
+            ToastAndroid.show('Erro ao fazer a solicitação, tente novamente', ToastAndroid.SHORT);
+        } finally {
+            setIsLoading(false);
+        }
     };
+    
+
+    // Função de pesquisa
+    const searchFilter = (text) => {
+        if (text) {
+            setSpeciesList([]);
+            setSearchText(text);
+            loadMoreItems();
+        } else {
+            setSpeciesList([]);
+            setSearchText('');
+            loadMoreItems();
+        }
+    };
+
 
     const renderItem = ({ item }) => (
         <TouchableOpacity
@@ -23,22 +82,24 @@ const SpeciesScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('Detalhes', { item: item })} >
             
             <View style={styles.cardContent}>
-
-                {item.scientificNameWithoutAuthor && item.scientificNameWithoutAuthor.length > 0 && (
-                    <Text style={styles.cardTitle}>{item.scientificNameWithoutAuthor}</Text>
+                {item.scientific_name && (
+                    <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">
+                        {item.scientific_name}
+                    </Text>
                 )}
 
-                {item.commonNames.length > 0 && (
-                    Array.isArray(item.commonNames) ? (
-                        <Text style={styles.cardParagraph}>
-                            {item.commonNames.slice(0, 2).join(', ')}
+                {item.common_name && (
+                    Array.isArray(item.common_name) ? (
+                        <Text style={styles.cardParagraph} numberOfLines={1} ellipsizeMode="tail">
+                            {item.common_name.slice(0, 2).join(', ')}
                         </Text>
                     )
                     : (
-                        <Text style={styles.cardParagraph}>{item.commonNames}</Text>
+                        <Text style={styles.cardParagraph} numberOfLines={1} ellipsizeMode="tail">
+                            {item.common_name}
+                        </Text>
                     )
                 )}
-                        
             </View>
 
             <View style={styles.cardArrow}>
@@ -46,53 +107,57 @@ const SpeciesScreen = ({ navigation }) => {
             </View>
         </TouchableOpacity>
     );
-    
 
-    // Functions for Search
-    const searchFilter = (text) => {
-        const filteredData = speciesList.filter((item) =>{
-            const isInScientificName = item.scientificNameWithoutAuthor.toLowerCase().includes(text.toLowerCase());
 
-            const isInCommonNames = item.commonNames?.some(commonName =>
-                commonName.toLowerCase().includes(text.toLowerCase())
-            );
-            
-            return isInScientificName || isInCommonNames;
-        });
-
-        setFilteredSpeciesList(filteredData);
-        setSearchText(text);
-    };
+    useEffect(() => {
+        loadMoreItems();
+    }, []);
 
 
     return (
         <View style={styles.container}>
-            <TextInput
-                placeholder="Pesquisar..."
-                onChangeText={(text) => searchFilter(text)}
-                value={searchText}
-            />
-            
+            <View style={styles.searchBar}>
+                <FolhaIcon name="search" style={styles.searchIcon} />
+                <TextInput
+                    placeholder="Filtrar espécies"
+                    style={styles.searchInput}
+                    onChangeText={(text) => searchFilter(text)}
+                    value={searchText}
+                />
+            </View>
+
             <Text style={styles.titleH2}>Espécies disponíveis</Text>
 
-            {loading ? (
+            {/* Carregando vazio */
+            isLoading && speciesList.length == 0 ? (
                 <ActivityIndicator size="large" style={styles.loading} />
-            ) : (
-                filteredSpeciesList && filteredSpeciesList.length > 0 ? (
-                    <FlatList 
-                        data={filteredSpeciesList}
-                        keyExtractor={(item) => item.scientificNameWithoutAuthor}
+            
+            ) : /* Carregando com conteúdo */
+            speciesList.length > 0 ? (
+                <>
+                    <FlatList
+                        data={speciesList}
+                        keyExtractor={(item, index) => index.toString()}
                         renderItem={renderItem}
-                        style={styles.result} />
-                ) : (
-                    <Text style={styles.paragraph}>Nenhum resultado encontrado. Tente novamente mais tarde.</Text>
-                )
-            )}
-            <GetSpeciesList onDataLoaded={handleDataLoaded} />
+                        style={styles.result}
+                        onEndReached={loadMoreItems}
+                        onEndReachedThreshold={0.5}
+                    />
 
+                    {isLoading ? (
+                        <ActivityIndicator size="large" style={styles.loading} />
+                    ) : null}
+                </>
+
+            ) : (
+                // Nenhum resultado
+                <Text style={styles.paragraph}>Nenhum resultado encontrado. Tente novamente mais tarde.</Text>
+            )}
+            
         </View>
     );
 };
+
 
 const styles = StyleSheet.create({
     container: {
@@ -100,13 +165,35 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
         alignItems: 'stretch',
+        gap: 20
     },
+
+
+    searchBar: {
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 15,
+        borderRadius: 10,
+        minHeight: 45,
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    searchIcon: {
+        color: '#1B1B1B',
+        fontSize: 16,
+    },
+    searchInput: {
+        flex: 1,
+        color: '#1B1B1B',
+        fontSize: 14,
+    },
+
 
     titleH2: {
         color: '#030712',
         fontFamily: 'DMSerifDisplay-Regular',
         fontSize: 26,
-        marginBottom: 20,
     },
 
 
@@ -140,6 +227,7 @@ const styles = StyleSheet.create({
         fontFamily: 'DMSerifDisplay-Regular',
         fontSize: 18,
         lineHeight: 20,
+        paddingRight: 5
     },
     cardParagraph: {
         color: '#6B7280',
@@ -149,7 +237,9 @@ const styles = StyleSheet.create({
     },
 
     cardArrow: {
-        flex: 1,
+        flexShrink: 0,
+        flexGrow: 0,
+        flexBasis: 15,
         alignItems: 'flex-end',
         justifyContent: 'center',
     },
@@ -157,6 +247,11 @@ const styles = StyleSheet.create({
         color: '#030712',
         fontSize: 18
     },
+
+    loading: {
+        marginVertical: 20,
+        color: '#14532D',
+    }
 });
 
 export default SpeciesScreen;

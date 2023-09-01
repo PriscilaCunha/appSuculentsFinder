@@ -11,7 +11,6 @@ const IdentifyScreen = ({ route }) => {
             <Image source={{ uri: imageUri }} style={styles.sourceImage} />
 
             <Text style={styles.titleH2}>Resultados</Text>
-            <Text style={styles.paragraph}>Veja as plantas semelhantes</Text>
 
             <IdentifyPlant imageUri={imageUri} />
         </View>

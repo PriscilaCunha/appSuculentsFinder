@@ -1,141 +1,126 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ToastAndroid, StyleSheet } from 'react-native';
+import { View, Text, ToastAndroid, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import FolhaIcon from './FolhaIcon';
 import plantValues from '../assets/data/plantValues.json';
 
-const GetPlantBookData = ({ plantbookSearchTerm }) => {
 
-    const plantbookApiKey = '95d2a29aa453af9a8ad4a91f35bf463b47b5323b';
-    const [plantbookData, setPlantBookData] = useState(null);
+const GetPlantDetails = ({ plantName }) => {
 
-    function determineClima(planta) {
-        // Lógica para determinar o clima ideal com base nas informações da planta
-    }
-    
-    function determineSolo(planta) {
-        // Lógica para determinar o tipo de solo ideal com base nas informações da planta
-    }
-    
-    function determineAdubacao(planta) {
-        // Lógica para determinar a adubação ideal com base nas informações da planta
-    }
-    
-    function determineLuminosidade(planta) {
-        // Lógica para determinar a luminosidade ideal com base nas informações da planta
-    }
-    
-    function determineFrequenciaRega(planta) {
-        // Lógica para determinar a frequência ideal de rega com base nas informações da planta
-    }
+    const [specieName, setSpecieName] = useState('');
+    const [specieDetails, setSpecieDetails] = useState([]);
+    const [loading, setLoading] = useState(false);
 
 
-    const gridData = [
-        {
-            icon: 'plant-cycle',
-            title: 'Ciclo',
-            text: 'Perene',
-        },
-        {
-            icon: 'watering-can',
-            title: 'Rega',
-            text: 'Moderada',
-        },
-        {
-            icon: 'sun',
-            title: 'Sol',
-            text: 'Sol pleno, meia-sombra',
-        },
-        {
-            icon: 'shovel',
-            title: 'Solo',
-            text: 'Baixa',
-        },
-    ];
-    
-    useEffect(() => {
-        const fetchPlantBookData = async () => {
-            try {
-                console.log('PLANTBOOK INICIO DO ENVIO');
-                console.log('PLANTBOOK SEARCH TERM', plantbookSearchTerm);
-                  
-                const plantbookResponse = await fetch(`https://open.plantbook.io/api/v1/plant/detail/${plantbookSearchTerm}/`, {
-                    method: 'GET',
-                    redirect: 'follow',
-                    headers: {
-                        'Authorization': `Token ${plantbookApiKey}`
-                    }
-                });
-    
-                console.log('RECEBENDO DADOS');
-                ToastAndroid.show('RECEBENDO DADOS', ToastAndroid.SHORT);
-    
-                const responseData = await plantbookResponse.json();
-                console.log('RESULTADO', responseData);
-    
-                if (responseData != null && responseData != undefined) {
-                    setPlantBookData(responseData);
-                }
+    function transformTextToSlug(text) {
+        const lowercaseText = text.toLowerCase();
+        const slug = lowercaseText.replace(/\s+/g, '-');
+        return slug;
+    }
+      
 
-                setLoading(false);
-            } catch (error) {
-                setLoading(false);
-                console.log('PLANTBOOK ERROR: ', error);
-                ToastAndroid.show('Erro ao fazer a solicitação, tente novamente', ToastAndroid.SHORT);
+    const fetchPlantDetails = async () => {
+
+        setLoading(true);
+
+        const apikey = 'U1Dh7px20uz1x8mE_auS4t3BQNzCEhbEgS1ToNVjR78';
+        var consultURL = `https://trefle.io/api/v1/species/${specieName}?token=${apikey}`;
+
+        try {
+            console.log('PEGANDO DETALHES...', specieName);
+            console.log('URL', consultURL);
+
+            const response = await fetch(consultURL, { method: 'GET', });
+
+            // Verificar se a requisição foi bem sucedida
+            if (!response.ok) {
+                // throw new Error('Erro na requisição à API.');
+                return;
             }
-        };
-    
-        fetchPlantBookData();
 
-    }, [plantbookSearchTerm, plantbookApiKey]);
+            // Pegar os dados
+            const responseData = await response.json();
+            console.log('DETALHES', responseData);
 
+            // Verificar se há resultados
+            if (responseData.error == true) {
+                setSpecieDetails([]);
+            } else {
+                setSpecieDetails(responseData.data);
+            }
 
-    
-    const climaIdeal = determineClima(plantbookData);
-    const soloIdeal = determineSolo(plantbookData);
-    const adubacaoIdeal = determineAdubacao(plantbookData);
-    const luminosidadeIdeal = determineLuminosidade(plantbookData);
-    const frequenciaRegaIdeal = determineFrequenciaRega(plantbookData);
+            setLoading(false);
+
+        } catch (error) {
+            setLoading(false);
+            console.error('ERROR:', error);
+            ToastAndroid.show('Erro ao fazer a solicitação, tente novamente', ToastAndroid.SHORT);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        setSpecieName( transformTextToSlug(plantName) );
+        fetchPlantDetails();
+    }, []);
+
 
     return (
-        <View>
-          {plantbookData ? (
-            <View>
+        loading ? (
+            <ActivityIndicator size="large" style={styles.loading} />
 
+        ) : (
+            specieDetails ? (
+                <>
+                    {/* <Text>{JSON.stringify(specieDetails, null, 2)}</Text> */}
 
-                <Text>{JSON.stringify(plantbookData, null, 2)}</Text>
+                    { specieDetails.image_url && specieDetails.image_url.length > 0 && (
+                        <Image source={{ uri: specieDetails.image_url }} style={styles.mainImage} />
+                    )}
 
-                <Text>Clima Ideal: {climaIdeal}</Text>
-                <Text>Solo Ideal: {soloIdeal}</Text>
-                <Text>Adubação Ideal: {adubacaoIdeal}</Text>
-                <Text>Luminosidade Ideal: {luminosidadeIdeal}</Text>
-                <Text>Frequência de Rega Ideal: {frequenciaRegaIdeal}</Text>
+                    { specieDetails.scientific_name && specieDetails.scientific_name.length > 0 && (
+                        <Text style={styles.title}>{specieDetails.scientific_name}</Text>
+                    )}
 
-                <View style={styles.gridBox}>
-                    <View style={styles.gridHeader}>
-                        <FolhaIcon style={styles.gridIcon} name="sun" />
-                        <Text style={styles.gridTitle}>Luz</Text>
-                    </View>
+                    { specieDetails.common_names &&
+                        specieDetails.common_names.pt.length > 0 && (
+                        Array.isArray(specieDetails.common_names.pt) ? (
+                            <Text style={styles.commonNames}>{specieDetails.common_names.pt.slice(0, 2).join(', ')}</Text>
+                        ) : (
+                            <Text style={styles.commonNames}>{specieDetails.species.commonNames}</Text>
+                            
+                        )
+                    )}
+                    
+{/* 
+                    <View style={styles.gridBox}>
+                        <View style={styles.gridHeader}>
+                            <FolhaIcon style={styles.gridIcon} name="sun" />
+                            <Text style={styles.gridTitle}>Luz</Text>
+                        </View>
 
-                    <Text style={styles.gridText}>
-                        { plantbookData.max_light_lux }
-                    </Text>
-                </View>
+                        <Text style={styles.gridText}>
+                            {plantbookData.max_light_lux}
+                        </Text>
+                    </View> */}
 
+                    <Text style={styles.commonNames}>{specieDetails.species.scientificNameWithoutAuthor}</Text>
+                </>
 
-            </View>
-          ) : (
-            <Text>Carregando dados do PlantBook...</Text>
-          )}
-        </View>
-      );
-    
+            ) : (
+                <Text>Infelizmente, não foi possível encontrar os detalhes da planta...</Text>
+            )
+        )
+    );
+
 }
 
 const styles = StyleSheet.create({
-    text: {
-        fontSize: 30,
-        color: 'pink',
-    }
+    loading: {
+        marginTop: 20,
+        color: '#14532D',
+    },
+
 });
 
-export default GetPlantBookData;
+export default GetPlantDetails;
