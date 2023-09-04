@@ -13,16 +13,16 @@ const DetailsScreen = ({ route, navigation }) => {
 
     // Pegar detalhes vindo da página anterior
     const getPlantDetails = () => {
-        console.log('PEGANDO DETALHES...');
+        console.log('PEGANDO DETALHES...', item);
 
-        if( item.scientific_name.length > 0 ){
+        if( item.scientific_name !== undefined && item.scientific_name !== null ){
             // Pega dados vindos da SpeciesScreen
             setDetailsFromResults({
                 name: item.scientific_name,
                 common_name: item.common_name,
                 image_url: item.image_url
             });
-        } else if ( item.species.scientificNameWithoutAuthor == 0 ) {
+        } else if ( item.species.scientificNameWithoutAuthor.length !== undefined && item.species.scientificNameWithoutAuthor.length !== null ) {
             // Pega dados vindos da IdentifyPlant
             setDetailsFromResults({
                 name: item.species.scientificNameWithoutAuthor,
