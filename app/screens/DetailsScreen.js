@@ -1,57 +1,113 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, ActivityIndicator, ScrollView, FlatList, StyleSheet, ToastAndroid } from 'react-native';
+
+import getVernacularName from '../helpers/getVernacularName';
 import FolhaIcon from '../components/FolhaIcon';
-import GetPlantDetails from '../components/GetPlantDetails';
+
+//import GetPlantDetails from '../components/GetPlantDetails';
 
 
-const DetailsScreen = ({ route, navigation }) => {
+const DetailsScreen = ({ route, navigation }) => { 
     const { item } = route.params;
-    const [detailsFromResults, setDetailsFromResults] = useState({});
-    const [loading, setLoading] = useState(false);
-    const [specieDetails, setSpecieDetails] = useState({});
 
+    const noImage = require('../assets/images/no_image_available.jpg');
+
+    const [detailsFromResults, setDetailsFromResults] = useState({});
+    
+    const [detailsFromGBIF, setDetailsFromGBIF] = useState({});
+    const [loadingBasic, setLoadingBasic] = useState(false);
+
+    const [detailsFromPerenual, setDetailsFromPerenual] = useState({});
+    const [loadingPerenual, setLoadingPerenual] = useState(false);
+
+    
 
     // Pegar detalhes vindo da página anterior
-    const getPlantDetails = () => {
+    const getPlantMainDetails = () => {
         console.log('PEGANDO DETALHES...', item);
 
-        if( item.scientific_name !== undefined && item.scientific_name !== null ){
+        if( item.canonicalName !== undefined && item.canonicalName !== null ){
             // Pega dados vindos da SpeciesScreen
+
+            const vernacularNames = getVernacularName(item.vernacularNames);
+
             setDetailsFromResults({
-                name: item.scientific_name,
-                common_name: item.common_name,
-                image_url: item.image_url
+                id: item.speciesKey,
+                name: item.canonicalName,
+                common_name: vernacularNames.vernacularName,
+                image_url: ''
             });
-        } else if ( item.species.scientificNameWithoutAuthor.length !== undefined && item.species.scientificNameWithoutAuthor.length !== null ) {
+            console.log('AQUIIIII', detailsFromResults);
+            
+        } else if ( item.species.scientificName !== undefined && item.species.scientificName !== null ) {
             // Pega dados vindos da IdentifyPlant
             setDetailsFromResults({
-                name: item.species.scientificNameWithoutAuthor,
-                common_name: item.species.commonNames,
+                id: item.gbif.id,
+                name: item.species.scientificName,
+                common_name: item.species.commonNames.join(', '),
                 image_url: item.images[0].url.o
             });
-        } else {
-            // Nenhum resultado
-            setDetailsFromResults({});
         }
     }
 
-    // Conectar com API
-    const getPlantCareDetails = async (plantName) => {
-        setLoading(true);
+    // Conectar com API GBIF
+    const getPlantBasicDetails = async (plantID) => {
+        setLoadingBasic(true);
 
         // Dados para envio da solicitação
-        const data = {
-            plantname: "african violet"
-        };
+        console.log('KEY', plantID);
+        const apiUrl = `https://api.gbif.org/v1/occurrence/search?taxon_key=${plantID}&mediaType=StillImage`;
 
         try {
-            console.log('INICIO DO ENVIO');
-            const response = await fetch('http://10.0.2.2:3000/plantdetails', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
+            console.log('Carregando Main Details...');
+
+            const response = await fetch( apiUrl, { method: 'GET', } );
+
+            // Verificar se a requisição foi bem sucedida
+            if (!response.ok) {
+                //throw new Error('Erro na requisição à API.');
+                return;
+            }
+
+            // Pegar os dados
+            const responseData = await response.json();
+            // console.log('DETALHES GBIF', responseData.results[0]);
+
+            // Verificar se há resultados
+            if (responseData.count > 0) {
+                setDetailsFromGBIF({
+                    image_url: responseData.results[0].media[0].identifier,
+                    classification: responseData.results[0].kingdom + ' > ' + responseData.results[0].phylum + ' > ' + responseData.results[0].order + ' > ' + responseData.results[0].family + ' > ' + responseData.results[0].genus + ' > ' + responseData.results[0].species
+                })
+            }
+
+            
+        } catch (error) {
+            console.error('ERROR:', error);
+            // ToastAndroid.show('Erro ao fazer a solicitação, tente novamente', ToastAndroid.SHORT);
+        } finally {
+            setLoadingBasic(false);
+        }
+
+    }
+
+    // Conectar com API Perenual
+    const getPlantFullDetails = async (plantName) => {
+        setLoadingPerenual(true);
+
+        // Dados para envio da solicitação
+        console.log('CARREGANDO DETALHES...', plantName);
+        const apiUrl = `http://10.0.2.2:3000/plantdetails`;
+        // const postData = { plantname: plantName, }
+        const postData = { plantname: 'african violet', }
+
+        try {
+            console.log('Carregando Full Details...');
+
+            const response = await fetch( apiUrl, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json', },
+                body: JSON.stringify( postData ),
             });
 
             // Verificar se a requisição foi bem sucedida
@@ -61,121 +117,182 @@ const DetailsScreen = ({ route, navigation }) => {
     
             // Pegar os dados
             const responseData = await response.json();
-            console.log('DETALHES', responseData);
+            console.log('RESPONSE PERENUAL', responseData);
 
             // Verificar se há resultados
-            if (Object.keys(responseData).length != 0) {
-                setSpecieDetails(responseData);
+            if (responseData.results) {
+                //console.log('AQUI');
+                setDetailsFromPerenual(responseData.results);
             }
 
-            setLoading(false);
-
         } catch (error) {
-            setLoading(false);
+            setLoadingPerenual(false);
             console.error('Erro ao fazer a solicitação POST:', error);
         } finally {
-            setLoading(false);
+            setLoadingPerenual(false);
         }
     }
 
+    const renderGrid = ({ item }) => (
+        <>
+            {console.log('ITEM', item)}
+
+            {/* CICLO */}
+            <View style={styles.gridBox}>
+                <View style={styles.gridHeader}>
+                    <FolhaIcon style={styles.gridIcon} name="ciclo" />
+                    <Text style={styles.gridTitle}>Ciclo</Text>
+                </View>
+
+                <Text style={styles.gridText}>{item.ciclo}</Text>
+            </View>
+
+            {/* MANUTENÇÃO */}
+            <View style={styles.gridBox}>
+                <View style={styles.gridHeader}>
+                    <FolhaIcon style={styles.gridIcon} name="manutencao" />
+                    <Text style={styles.gridTitle}>Manutenção</Text>
+                </View>
+
+                <Text style={styles.gridText}>{item.manutencao}</Text>
+            </View>
+
+            {/* REGA */}
+            <View style={styles.gridBox}>
+                <View style={styles.gridHeader}>
+                    <FolhaIcon style={styles.gridIcon} name="rega" />
+                    <Text style={styles.gridTitle}>Rega</Text>
+                </View>
+
+                <Text style={styles.gridText}>{item.rega}</Text>
+            </View>
+
+            {/* SOL */}
+            <View style={styles.gridBox}>
+                <View style={styles.gridHeader}>
+                    <FolhaIcon style={styles.gridIcon} name="sol" />
+                    <Text style={styles.gridTitle}>Sol</Text>
+                </View>
+
+                <Text style={styles.gridText}>{item.sol}</Text>
+            </View>
+        </>
+    );
+
     useEffect(() => {
-        Object.keys(specieDetails).length == 0 ?
-            getPlantCareDetails(detailsFromResults.name) 
-            : null
-        
+        // Pegar detalhes vindo da página resultados
+        getPlantMainDetails();
+        console.log('DETALHES', detailsFromResults);
+
+        // Pegar detalhes da API GBIF
+        getPlantBasicDetails( detailsFromResults.id );
+        // console.log('DETALHES GBIF', detailsFromGBIF);
+
+        // Pegar detalhes da API Perenual
+        getPlantFullDetails( detailsFromResults.name );
+        //console.log('DETALHES PERENUAL', detailsFromPerenual);
     }, []);
 
     return (
-        Object.keys(detailsFromResults).length == 0 ? (
-            <>
-                <ActivityIndicator size="large" style={styles.loading} />
-                { getPlantDetails() }
-            </>
+        <ScrollView style={styles.container}>
 
-        ) : (
-            <View>
-                <Text style={styles.title}>Title: {detailsFromResults.name}</Text>            
-                <Text>{JSON.stringify(detailsFromResults, null, 2)}</Text>
-
-                {loading ? (
-                    <ActivityIndicator size={'large'} style={styles.loading} />
+            {/* Image */}
+            {detailsFromResults.image_url ? (
+                <Image style={styles.image} source={{ uri: detailsFromResults.image_url }} />
+            ) : (
+                detailsFromGBIF.image_url ? (
+                    <Image style={styles.image} source={{ uri: detailsFromGBIF.image_url }} />
                 ) : (
-                    <Text>{JSON.stringify(specieDetails, null, 2)}</Text>
-                )}
-            </View>
-        )
+                    <Image style={styles.image} source={noImage} />
+                )
+            )}
+            
+            {/* Name */}
+            <Text style={styles.title}>{detailsFromResults.name}</Text>
+
+            {/* Common name */}
+            <Text style={styles.commonNames}>{detailsFromResults.common_name}</Text>
+
+            {/* Quadros */}
+            {loadingPerenual ? (
+                <ActivityIndicator size="large" style={styles.loading} />
+            ) : (
+
+                // detailsFromPerenual.length > 0 ? (
+                <View style={styles.gridContainer}>
+                    {/* CICLO */}
+                    <View style={styles.gridBox}>
+                        <View style={styles.gridHeader}>
+                            <FolhaIcon style={styles.gridIcon} name="plant-cycle" />
+                            <Text style={styles.gridTitle}>Ciclo</Text>
+                        </View>
+
+                        <Text style={styles.gridText}>{detailsFromPerenual.ciclo}</Text>
+                    </View>
+
+                    {/* REGA */}
+                    <View style={styles.gridBox}>
+                        <View style={styles.gridHeader}>
+                            <FolhaIcon style={styles.gridIcon} name="watering-can" />
+                            <Text style={styles.gridTitle}>Rega</Text>
+                        </View>
+
+                        <Text style={styles.gridText}>{detailsFromPerenual.rega}</Text>
+                    </View>
+
+                    {/* SOL */}
+                    <View style={styles.gridBox}>
+                        <View style={styles.gridHeader}>
+                            <FolhaIcon style={styles.gridIcon} name="sun" />
+                            <Text style={styles.gridTitle}>Sol</Text>
+                        </View>
+
+                        <Text style={styles.gridText}>{detailsFromPerenual.sol}</Text>
+                    </View>
+
+                    {/* MANUTENÇÃO */}
+                    <View style={styles.gridBox}>
+                        <View style={styles.gridHeader}>
+                            <FolhaIcon style={styles.gridIcon} name="shovel" />
+                            <Text style={styles.gridTitle}>Manutenção</Text>
+                        </View>
+
+                        <Text style={styles.gridText}>{detailsFromPerenual.manutencao}</Text>
+                    </View>
+
+                </View>
+                // ) : (
+                    // <Text style={styles.description}>Nenhum dado encontrado para esta planta.</Text>
+                // )
+            )}
+
+            {/* Description */}
+            {loadingBasic ? (
+                <ActivityIndicator size="large" style={styles.loading} />
+            ) : (
+                <Text style={styles.description}>
+                    <Text style={styles.bold}>Classificação: </Text>
+                    { detailsFromGBIF.classification }
+                </Text>
+            )}
+
+            {/* Instruções */}
+            {loadingPerenual ? (
+               <ActivityIndicator size="large" style={styles.loading} />
+            ) : (
+                detailsFromPerenual.length > 0 ? (
+                    <Text style={styles.description}>
+                        <Text style={styles.bold}>Instruções: </Text>
+                        {/* { detailsFromPerenual[0].instructions } */}
+                    </Text>
+
+                ) : (
+                    <Text style={styles.description}>Nenhum dado encontrado para esta planta.</Text>
+                )
+            )}
 
 
-
-
-        // loading ? (
-        //     <ActivityIndicator /> 
-        // ) : (
-        //     <View>
-        //         <Text style={styles.title}>PlantNet</Text>
-        //         <Text>{JSON.stringify(plantScientificName, null, 2)}</Text>
-        //         {/* <Text>{JSON.stringify(detailsFromResults, null, 2)}</Text> */}
-        //         {/* <Text>{JSON.stringify(specieDetails, null, 2)}</Text> */}
-
-        //     </View>
-        // )
-
-
-        // <Text style={styles.title}>PlantBook</Text>
-        // <GetPlantDetails plantName={item.species.scientificNameWithoutAuthor} />
-
-        // <ScrollView style={styles.container}>
-        //     <Image source={{ uri: item.images[0].url.o }} style={styles.image} />
-
-        //     <Text style={styles.title}>{item.species.scientificNameWithoutAuthor}</Text>
-
-        //     {item.species && item.species.commonNames && item.species.commonNames.length > 0 && (
-        //         Array.isArray(item.species.commonNames)
-        //             ? (
-        //                 <Text style={styles.commonNames}>
-        //                     {item.species.commonNames.slice(0, 2).join(', ')}
-        //                 </Text>
-        //             )
-        //             : (
-        //                 <Text style={styles.commonNames}>{item.species.commonNames}</Text>
-        //             )
-        //     )}
-
-        //     <View style={styles.gridContainer}>
-        //         <FlatList
-        //             data={gridData}
-        //             numColumns={2}
-        //             renderItem={({ item }) => (
-        //                 <View style={styles.gridBox}>
-        //                     <View style={styles.gridHeader}>
-        //                         <FolhaIcon style={styles.gridIcon} name={item.icon} />
-        //                         <Text style={styles.gridTitle}>{item.title}</Text>
-        //                     </View>
-
-        //                     <Text style={styles.gridText}>{item.text}</Text>
-        //                 </View>
-        //             )}
-        //             keyExtractor={(item, index) => index.toString()}
-        //         />
-        //     </View>
-
-        //     <Text style={styles.description}>{item.description}</Text>
-
-        //     {loading ? (
-        //         <ActivityIndicator />
-        //     ) : (
-        //         <>
-        //             <Text style={styles.title}>PlantBook</Text>
-
-        //             <GetPlantDetails
-        //                 plantbookSearchTerm={item.species.scientificNameWithoutAuthor.toLowerCase()}
-        //             />
-        //         </>
-        //     )}
-
-        //     <Text style={styles.title}>PlantNet</Text>
-        //     <Text>{JSON.stringify(item, null, 2)}</Text>
-        // </ScrollView>
+        </ScrollView>
     );
 };
 
@@ -190,6 +307,7 @@ const styles = StyleSheet.create({
         height: 280,
         borderRadius: 10,
         marginBottom: 20,
+        resizeMode: 'cover',
     },
 
     title: {
@@ -207,15 +325,17 @@ const styles = StyleSheet.create({
     },
 
     gridContainer: {
+        width: '100%',
+        display: 'flex',
         flexDirection: 'row',
         flexWrap: 'wrap',
-        marginBottom: 10,
-        margin: -5,
+        marginBottom: 20,
     },
     gridBox: {
-        flex: 1,
-        flexShrink: 1,
-        margin: 5,
+        flexBasis: '48%',
+        maxWidth: '48%',
+        marginBottom: 5,
+        marginHorizontal: '1%',
         paddingVertical: 10,
         paddingHorizontal: 15,
         backgroundColor: '#E5E7EB',
@@ -244,7 +364,10 @@ const styles = StyleSheet.create({
     description: {
         color: '#030712',
         fontFamily: 'Inter-Regular',
-        fontSize: 14,
+        fontSize: 16,
+    },
+    bold: {
+        fontWeight: 'bold',
     },
 });
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, ActivityIndicator, FlatList, TouchableOpacity } from 'react-native';
 
+import getVernacularName from '../helpers/getVernacularName';
 import FolhaIcon from "../components/FolhaIcon";
 
 const SpeciesScreen = ({ navigation }) => {
@@ -9,6 +10,7 @@ const SpeciesScreen = ({ navigation }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
     const [searchText, setSearchText] = useState('');
+    const [hasPagination, setHasPagination] = useState(true);
 
 
     const loadMoreItems = async () => {
@@ -16,6 +18,7 @@ const SpeciesScreen = ({ navigation }) => {
         if (isLoading) {
             return;
         }
+        
         setIsLoading(true);
 
         try {
@@ -27,11 +30,12 @@ const SpeciesScreen = ({ navigation }) => {
 
             // Consultar por pesquisa
             if (searchText.length > 0) {
-                consultURL = `https://api.gbif.org/v1/species/search?q=${searchText}&rank=SPECIES&highertaxon_key=6&qField=SCIENTIFIC&status=ACCEPTED`;
                 console.log('BUSCANDO POR:', searchText);
+                consultURL = `https://api.gbif.org/v1/species/search?q=${searchText}&rank=SPECIES&highertaxon_key=6&status=ACCEPTED`;
+                setHasPagination(false);
             } else {
-                consultURL = `https://api.gbif.org/v1/species/search?rank=SPECIES&highertaxon_key=6&status=ACCEPTED&offset=${currentPage}&limit=${limit}`;
                 console.log('BUSCANDO TODOS...');
+                consultURL = `https://api.gbif.org/v1/species/search?rank=SPECIES&highertaxon_key=6&status=ACCEPTED&offset=${currentPage}&limit=${limit}`;
             }
 
             const response = await fetch( consultURL, { method: 'GET', } );
@@ -49,11 +53,11 @@ const SpeciesScreen = ({ navigation }) => {
             // Verificar se há resultados
             if (responseData.count > 0) {
                 // Há resultados
-                console.log('HÀ RESULTADOS');
+                console.log('POSSUI RESULTADOS');
 
                 // Verifica lista atual
-                console.log('LISTA ATUAL', speciesList);
-                if (speciesList.length === 0) {
+                // console.log('LISTA ATUAL', speciesList);
+                if (speciesList.length === 0 || hasPagination === false) {
                     // Lista vazia
                     console.log('LISTA VAZIA');
                     setSpeciesList(responseData.results);
@@ -62,44 +66,14 @@ const SpeciesScreen = ({ navigation }) => {
                     // Lista não vazia
                     console.log('LISTA NÃO VAZIA');
                     setSpeciesList(prevSpeciesList => [...prevSpeciesList, ...responseData.results]);
-                    setCurrentPage(currentPage + limit);
                 }
+
+                // Atualizar página
+                setCurrentPage(currentPage + limit);
             } else {
                 // Nenhum resultado
                 console.log('NENHUM RESULTADO');
             }
-
-
-            // const apikey = 'U1Dh7px20uz1x8mE_auS4t3BQNzCEhbEgS1ToNVjR78';
-            // var consultURL = '';
-
-            // if (searchText == '') {
-            //     // Consultar todas
-            //     consultURL = `https://trefle.io/api/v1/species?token=${apikey}&order[scientific_name]=asc&page=${currentPage}`;
-            // } else {
-            //     // Consultar por pesquisa
-            //     consultURL = `https://trefle.io/api/v1/species/search?token=${apikey}&order[scientific_name]=asc&q=${searchText}`;
-            // }
-
-            // const response = await fetch( consultURL, { method: 'GET', } );
-
-            // // Verificar se a requisição foi bem sucedida
-            // if (!response.ok) {
-            //     //throw new Error('Erro na requisição à API.');
-            //     return;
-            // }
-
-            // // Pegar os dados
-            // const responseData = await response.json();
-
-            // // Verificar se há resultados
-            // if (responseData.meta.total == 0) {
-            //     setSpeciesList([]);
-            //     setCurrentPage(1);
-            // } else {
-            //     setSpeciesList(prevSpeciesList => [...prevSpeciesList, ...responseData.data]);
-            //     setCurrentPage(currentPage + 1);
-            // }
         } catch (error) {
             console.error('ERROR:', error);
             // ToastAndroid.show('Erro ao fazer a solicitação, tente novamente', ToastAndroid.SHORT);
@@ -129,14 +103,9 @@ const SpeciesScreen = ({ navigation }) => {
 
 
     const renderItem = ({ item }) => {
+        const vernacularNames = getVernacularName(item.vernacularNames);
 
-        const vernacularNames = item.vernacularNames || [];
-        // Filtra os resultados com a linguagem "por" (português)
-        const portugueseNames = vernacularNames.filter((name) => name.language === "por");
-        // Se não houver resultados em português, use os em inglês ("eng")
-        const fallbackNames = vernacularNames.filter((name) => name.language === "eng");
-        // Escolhe as palavras em português se houverem, caso contrário, usa as em inglês
-        const selectedNames = portugueseNames.length > 0 ? portugueseNames : fallbackNames;
+        console.log('ITEM', item);
 
         return (
             <TouchableOpacity
@@ -150,9 +119,9 @@ const SpeciesScreen = ({ navigation }) => {
                         </Text>
                     )}
 
-                    {selectedNames.length > 0 && (
+                    {vernacularNames && ( 
                         <Text style={styles.cardParagraph} numberOfLines={1} ellipsizeMode="tail">
-                            {selectedNames.map((vernacular) => vernacular.vernacularName).join(', ')}
+                            {vernacularNames.vernacularName}
                         </Text>
                     )}
                 </View>
