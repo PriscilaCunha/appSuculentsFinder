@@ -69,3 +69,6 @@ screens/CameraScreen copy.js
 
 # Old Code
 /app/_OLD
+
+# Misc
+.env

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, ActivityIndicator, ScrollView, FlatList, StyleSheet, ToastAndroid } from 'react-native';
 
-import getVernacularName from '../helpers/getVernacularName';
 import FolhaIcon from '../components/FolhaIcon';
-
-//import GetPlantDetails from '../components/GetPlantDetails';
+import getPlantMainDetails from '../helpers/getPlantMainDetails';
+import getPlantBasicDetails from '../helpers/getPlantBasicDetails';
+import getPlantFullDetails from '../helpers/getPlantFullDetails';
 
 
 const DetailsScreen = ({ route, navigation }) => { 
@@ -20,178 +20,43 @@ const DetailsScreen = ({ route, navigation }) => {
     const [detailsFromPerenual, setDetailsFromPerenual] = useState({});
     const [loadingPerenual, setLoadingPerenual] = useState(false);
 
-    
 
-    // Pegar detalhes vindo da página anterior
-    const getPlantMainDetails = () => {
-        console.log('PEGANDO DETALHES...', item);
+    const getPlantFullDetailsDummy = () => {
+        const data = {"results": {"ciclo": "Herbaceous Perennial", "manutencao": "Medium", "podaLongo": "African violets (Saintpaulia ionantha) should be pruned regularly throughout the season, but typically no more than once a month. Prune off dead or dying leaves and flowers to promote healthy new foliage and blooms. Begin pruning in late winter or early spring, just before new growth appears.", "rega": "Average", "regaLongo": "African violets should be watered once every 5-7 days, depending on the local conditions such as humidity and temperature. Watering for African violets should be deep and thorough but take care not to overwater. The size of the pot and type of potting medium also affect the amount of water needed. About 3 tablespoons of water per plant is recommended, but this may need to be adjusted depending on the size of the pot and the potting medium.", "sol": "part shade,part sun/part shade", "solLongo": "African Violets require low-to-medium indirect sunlight for optimal growth and flowering. They do best with 4-6 hours of bright, indirect sunlight each day, through a lightly curtained window or other indirect light source. Avoid direct sunlight, as this could cause the delicate leaves to burn. If the African Violet gets too little light, it will not bloom. However, too much direct sunlight can cause the leaves to wilt or turn yellow and can cause burning of the petals."}}
 
-        if( item.canonicalName !== undefined && item.canonicalName !== null ){
-            // Pega dados vindos da SpeciesScreen
-
-            const vernacularNames = getVernacularName(item.vernacularNames);
-
-            setDetailsFromResults({
-                id: item.speciesKey,
-                name: item.canonicalName,
-                common_name: vernacularNames.vernacularName,
-                image_url: ''
-            });
-            console.log('AQUIIIII', detailsFromResults);
-            
-        } else if ( item.species.scientificName !== undefined && item.species.scientificName !== null ) {
-            // Pega dados vindos da IdentifyPlant
-            setDetailsFromResults({
-                id: item.gbif.id,
-                name: item.species.scientificName,
-                common_name: item.species.commonNames.join(', '),
-                image_url: item.images[0].url.o
-            });
-        }
+        setDetailsFromPerenual(data.results);
     }
-
-    // Conectar com API GBIF
-    const getPlantBasicDetails = async (plantID) => {
-        setLoadingBasic(true);
-
-        // Dados para envio da solicitação
-        console.log('KEY', plantID);
-        const apiUrl = `https://api.gbif.org/v1/occurrence/search?taxon_key=${plantID}&mediaType=StillImage`;
-
-        try {
-            console.log('Carregando Main Details...');
-
-            const response = await fetch( apiUrl, { method: 'GET', } );
-
-            // Verificar se a requisição foi bem sucedida
-            if (!response.ok) {
-                //throw new Error('Erro na requisição à API.');
-                return;
-            }
-
-            // Pegar os dados
-            const responseData = await response.json();
-            // console.log('DETALHES GBIF', responseData.results[0]);
-
-            // Verificar se há resultados
-            if (responseData.count > 0) {
-                setDetailsFromGBIF({
-                    image_url: responseData.results[0].media[0].identifier,
-                    classification: responseData.results[0].kingdom + ' > ' + responseData.results[0].phylum + ' > ' + responseData.results[0].order + ' > ' + responseData.results[0].family + ' > ' + responseData.results[0].genus + ' > ' + responseData.results[0].species
-                })
-            }
-
-            
-        } catch (error) {
-            console.error('ERROR:', error);
-            // ToastAndroid.show('Erro ao fazer a solicitação, tente novamente', ToastAndroid.SHORT);
-        } finally {
-            setLoadingBasic(false);
-        }
-
-    }
-
-    // Conectar com API Perenual
-    const getPlantFullDetails = async (plantName) => {
-        setLoadingPerenual(true);
-
-        // Dados para envio da solicitação
-        console.log('CARREGANDO DETALHES...', plantName);
-        const apiUrl = `http://10.0.2.2:3000/plantdetails`;
-        // const postData = { plantname: plantName, }
-        const postData = { plantname: 'african violet', }
-
-        try {
-            console.log('Carregando Full Details...');
-
-            const response = await fetch( apiUrl, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json', },
-                body: JSON.stringify( postData ),
-            });
-
-            // Verificar se a requisição foi bem sucedida
-            if (!response.ok) {
-                return;
-            }
-    
-            // Pegar os dados
-            const responseData = await response.json();
-            console.log('RESPONSE PERENUAL', responseData);
-
-            // Verificar se há resultados
-            if (responseData.results) {
-                //console.log('AQUI');
-                setDetailsFromPerenual(responseData.results);
-            }
-
-        } catch (error) {
-            setLoadingPerenual(false);
-            console.error('Erro ao fazer a solicitação POST:', error);
-        } finally {
-            setLoadingPerenual(false);
-        }
-    }
-
-    const renderGrid = ({ item }) => (
-        <>
-            {console.log('ITEM', item)}
-
-            {/* CICLO */}
-            <View style={styles.gridBox}>
-                <View style={styles.gridHeader}>
-                    <FolhaIcon style={styles.gridIcon} name="ciclo" />
-                    <Text style={styles.gridTitle}>Ciclo</Text>
-                </View>
-
-                <Text style={styles.gridText}>{item.ciclo}</Text>
-            </View>
-
-            {/* MANUTENÇÃO */}
-            <View style={styles.gridBox}>
-                <View style={styles.gridHeader}>
-                    <FolhaIcon style={styles.gridIcon} name="manutencao" />
-                    <Text style={styles.gridTitle}>Manutenção</Text>
-                </View>
-
-                <Text style={styles.gridText}>{item.manutencao}</Text>
-            </View>
-
-            {/* REGA */}
-            <View style={styles.gridBox}>
-                <View style={styles.gridHeader}>
-                    <FolhaIcon style={styles.gridIcon} name="rega" />
-                    <Text style={styles.gridTitle}>Rega</Text>
-                </View>
-
-                <Text style={styles.gridText}>{item.rega}</Text>
-            </View>
-
-            {/* SOL */}
-            <View style={styles.gridBox}>
-                <View style={styles.gridHeader}>
-                    <FolhaIcon style={styles.gridIcon} name="sol" />
-                    <Text style={styles.gridTitle}>Sol</Text>
-                </View>
-
-                <Text style={styles.gridText}>{item.sol}</Text>
-            </View>
-        </>
-    );
 
     useEffect(() => {
-        // Pegar detalhes vindo da página resultados
-        getPlantMainDetails();
-        console.log('DETALHES', detailsFromResults);
+        const fetchData = async () => {
+            try {
+                // Pegar detalhes vindo da página resultados
+                await getPlantMainDetails(item, setDetailsFromResults);
+            } catch (error) {
+                console.error('Erro ao buscar detalhes:', error);
+            }
+        };
+    
+        fetchData();
+    }, [item]);
+
+    // observar o estado de detailsFromResults
+    useEffect(() => {
+        console.log('USE EFFECT DETALHES', detailsFromResults);
 
         // Pegar detalhes da API GBIF
-        getPlantBasicDetails( detailsFromResults.id );
-        // console.log('DETALHES GBIF', detailsFromGBIF);
+        if (detailsFromResults.id) {
+            getPlantBasicDetails(detailsFromResults.id, setDetailsFromGBIF, setLoadingBasic);
+            // console.log('DETALHES GBIF', detailsFromGBIF);
+        }
 
         // Pegar detalhes da API Perenual
-        getPlantFullDetails( detailsFromResults.name );
-        //console.log('DETALHES PERENUAL', detailsFromPerenual);
-    }, []);
+        // getPlantFullDetailsDummy();
+        if (detailsFromResults.name) {
+            getPlantFullDetails( detailsFromResults.name, setDetailsFromPerenual, setLoadingPerenual);
+            console.log('DETALHES PERENUAL', detailsFromPerenual);
+        }
+    }, [detailsFromResults]);
 
     return (
         <ScrollView style={styles.container}>
@@ -217,53 +82,53 @@ const DetailsScreen = ({ route, navigation }) => {
             {loadingPerenual ? (
                 <ActivityIndicator size="large" style={styles.loading} />
             ) : (
+                detailsFromPerenual && detailsFromPerenual.ciclo ? (
+                    <View style={styles.gridContainer}>
+                        {/* CICLO */}
+                        <View style={styles.gridBox}>
+                            <View style={styles.gridHeader}>
+                                <FolhaIcon style={styles.gridIcon} name="plant-cycle" />
+                                <Text style={styles.gridTitle}>Ciclo</Text>
+                            </View>
 
-                // detailsFromPerenual.length > 0 ? (
-                <View style={styles.gridContainer}>
-                    {/* CICLO */}
-                    <View style={styles.gridBox}>
-                        <View style={styles.gridHeader}>
-                            <FolhaIcon style={styles.gridIcon} name="plant-cycle" />
-                            <Text style={styles.gridTitle}>Ciclo</Text>
+                            <Text style={styles.gridText}>{detailsFromPerenual.ciclo}</Text>
                         </View>
 
-                        <Text style={styles.gridText}>{detailsFromPerenual.ciclo}</Text>
-                    </View>
+                        {/* REGA */}
+                        <View style={styles.gridBox}>
+                            <View style={styles.gridHeader}>
+                                <FolhaIcon style={styles.gridIcon} name="watering-can" />
+                                <Text style={styles.gridTitle}>Rega</Text>
+                            </View>
 
-                    {/* REGA */}
-                    <View style={styles.gridBox}>
-                        <View style={styles.gridHeader}>
-                            <FolhaIcon style={styles.gridIcon} name="watering-can" />
-                            <Text style={styles.gridTitle}>Rega</Text>
+                            <Text style={styles.gridText}>{detailsFromPerenual.rega}</Text>
                         </View>
 
-                        <Text style={styles.gridText}>{detailsFromPerenual.rega}</Text>
-                    </View>
+                        {/* SOL */}
+                        <View style={styles.gridBox}>
+                            <View style={styles.gridHeader}>
+                                <FolhaIcon style={styles.gridIcon} name="sun" />
+                                <Text style={styles.gridTitle}>Sol</Text>
+                            </View>
 
-                    {/* SOL */}
-                    <View style={styles.gridBox}>
-                        <View style={styles.gridHeader}>
-                            <FolhaIcon style={styles.gridIcon} name="sun" />
-                            <Text style={styles.gridTitle}>Sol</Text>
+                            <Text style={styles.gridText}>{detailsFromPerenual.sol}</Text>
                         </View>
 
-                        <Text style={styles.gridText}>{detailsFromPerenual.sol}</Text>
-                    </View>
+                        {/* MANUTENÇÃO */}
+                        <View style={styles.gridBox}>
+                            <View style={styles.gridHeader}>
+                                <FolhaIcon style={styles.gridIcon} name="shovel" />
+                                <Text style={styles.gridTitle}>Manutenção</Text>
+                            </View>
 
-                    {/* MANUTENÇÃO */}
-                    <View style={styles.gridBox}>
-                        <View style={styles.gridHeader}>
-                            <FolhaIcon style={styles.gridIcon} name="shovel" />
-                            <Text style={styles.gridTitle}>Manutenção</Text>
+                            <Text style={styles.gridText}>{detailsFromPerenual.manutencao}</Text>
                         </View>
 
-                        <Text style={styles.gridText}>{detailsFromPerenual.manutencao}</Text>
                     </View>
-
-                </View>
-                // ) : (
+                ) : (
                     // <Text style={styles.description}>Nenhum dado encontrado para esta planta.</Text>
-                // )
+                    null
+                )
             )}
 
             {/* Description */}
@@ -280,12 +145,23 @@ const DetailsScreen = ({ route, navigation }) => {
             {loadingPerenual ? (
                <ActivityIndicator size="large" style={styles.loading} />
             ) : (
-                detailsFromPerenual.length > 0 ? (
-                    <Text style={styles.description}>
-                        <Text style={styles.bold}>Instruções: </Text>
-                        {/* { detailsFromPerenual[0].instructions } */}
-                    </Text>
+                detailsFromPerenual && detailsFromPerenual.ciclo ? (
+                    <View>
+                        <Text style={styles.description}>
+                            <Text style={styles.bold}>Rega: </Text>
+                            { detailsFromPerenual.regaLongo }
+                        </Text>
 
+                        <Text style={styles.description}>
+                            <Text style={styles.bold}>Sol: </Text>
+                            { detailsFromPerenual.solLongo }
+                        </Text>
+
+                        <Text style={styles.description}>
+                            <Text style={styles.bold}>Poda: </Text>
+                            { detailsFromPerenual.podaLongo }
+                        </Text>
+                    </View>
                 ) : (
                     <Text style={styles.description}>Nenhum dado encontrado para esta planta.</Text>
                 )
@@ -365,6 +241,7 @@ const styles = StyleSheet.create({
         color: '#030712',
         fontFamily: 'Inter-Regular',
         fontSize: 16,
+        marginBottom: 20,
     },
     bold: {
         fontWeight: 'bold',

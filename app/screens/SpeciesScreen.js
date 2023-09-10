@@ -105,7 +105,7 @@ const SpeciesScreen = ({ navigation }) => {
     const renderItem = ({ item }) => {
         const vernacularNames = getVernacularName(item.vernacularNames);
 
-        console.log('ITEM', item);
+        // console.log('ITEM', item);
 
         return (
             <TouchableOpacity
