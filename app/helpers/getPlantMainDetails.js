@@ -2,7 +2,7 @@ import getVernacularName from '../helpers/getVernacularName';
 
 // Pegar detalhes vindo da página anterior
 const getPlantMainDetails = (item, setDetailsFromResults) => {
-    console.log('PEGANDO DETALHES...', item);
+    console.log('PEGANDO DETALHES PERENUAL...', item);
 
     if( item.canonicalName !== undefined && item.canonicalName !== null ){
         // Pega dados vindos da SpeciesScreen

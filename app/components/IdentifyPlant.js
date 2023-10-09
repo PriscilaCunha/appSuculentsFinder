@@ -4,6 +4,7 @@ import RNFetchBlob from 'rn-fetch-blob';
 import FolhaIcon from "./FolhaIcon";
 import { useNavigation } from '@react-navigation/native';
 
+import Config from "react-native-config";
 
 const IdentifyPlant = ({ imageUri }) => {
     const navigation = useNavigation();
@@ -31,8 +32,10 @@ const IdentifyPlant = ({ imageUri }) => {
             type: 'image/jpeg',
             name: filename,
         });
-        const apikey = '2b10872BcGty3dTu0dD9n05QPu';
+        const apikey = Config.PLANTNET_APIKEY;
         const lang = 'pt';
+
+        console.log('APIKEY', apikey);
 
         try {
             console.log('INICIO DO ENVIO');

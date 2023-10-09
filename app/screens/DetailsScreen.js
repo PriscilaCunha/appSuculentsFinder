@@ -5,7 +5,7 @@ import FolhaIcon from '../components/FolhaIcon';
 import getPlantMainDetails from '../helpers/getPlantMainDetails';
 import getPlantBasicDetails from '../helpers/getPlantBasicDetails';
 import getPlantFullDetails from '../helpers/getPlantFullDetails';
-
+import getTranslation from '../helpers/getTranslation';
 
 const DetailsScreen = ({ route, navigation }) => { 
     const { item } = route.params;
@@ -20,9 +20,12 @@ const DetailsScreen = ({ route, navigation }) => {
     const [detailsFromPerenual, setDetailsFromPerenual] = useState({});
     const [loadingPerenual, setLoadingPerenual] = useState(false);
 
+    const [detailsFromPerenualPT, setDetailsFromPerenualPT] = useState({});
+    const [loadingPerenualPT, setLoadingPerenualPT] = useState(false);
+    const [translationRequested, setTranslationRequested] = useState(false);
 
     const getPlantFullDetailsDummy = () => {
-        const data = {"results": {"ciclo": "Herbaceous Perennial", "manutencao": "Medium", "podaLongo": "African violets (Saintpaulia ionantha) should be pruned regularly throughout the season, but typically no more than once a month. Prune off dead or dying leaves and flowers to promote healthy new foliage and blooms. Begin pruning in late winter or early spring, just before new growth appears.", "rega": "Average", "regaLongo": "African violets should be watered once every 5-7 days, depending on the local conditions such as humidity and temperature. Watering for African violets should be deep and thorough but take care not to overwater. The size of the pot and type of potting medium also affect the amount of water needed. About 3 tablespoons of water per plant is recommended, but this may need to be adjusted depending on the size of the pot and the potting medium.", "sol": "part shade,part sun/part shade", "solLongo": "African Violets require low-to-medium indirect sunlight for optimal growth and flowering. They do best with 4-6 hours of bright, indirect sunlight each day, through a lightly curtained window or other indirect light source. Avoid direct sunlight, as this could cause the delicate leaves to burn. If the African Violet gets too little light, it will not bloom. However, too much direct sunlight can cause the leaves to wilt or turn yellow and can cause burning of the petals."}}
+        const data = {"results": {"ciclo": "Herbaceous Perennial", "manutencao": "Medium", "podaExplicacao": "African violets (Saintpaulia ionantha) should be pruned regularly throughout the season, but typically no more than once a month. Prune off dead or dying leaves and flowers to promote healthy new foliage and blooms. Begin pruning in late winter or early spring, just before new growth appears.", "rega": "Average", "regaExplicacao": "African violets should be watered once every 5-7 days, depending on the local conditions such as humidity and temperature. Watering for African violets should be deep and thorough but take care not to overwater. The size of the pot and type of potting medium also affect the amount of water needed. About 3 tablespoons of water per plant is recommended, but this may need to be adjusted depending on the size of the pot and the potting medium.", "sol": "part shade,part sun/part shade", "solExplicacao": "African Violets require low-to-medium indirect sunlight for optimal growth and flowering. They do best with 4-6 hours of bright, indirect sunlight each day, through a lightly curtained window or other indirect light source. Avoid direct sunlight, as this could cause the delicate leaves to burn. If the African Violet gets too little light, it will not bloom. However, too much direct sunlight can cause the leaves to wilt or turn yellow and can cause burning of the petals."}}
 
         setDetailsFromPerenual(data.results);
     }
@@ -58,6 +61,14 @@ const DetailsScreen = ({ route, navigation }) => {
         }
     }, [detailsFromResults]);
 
+    useEffect(() => {
+        // Pegar detalhes da API Perenual Traduzido
+        if (detailsFromPerenual.ciclo && !translationRequested) {
+            getTranslation(detailsFromPerenual, setDetailsFromPerenualPT, setLoadingPerenualPT, translationRequested);
+            setTranslationRequested(true);
+        }
+    }, [detailsFromPerenual, translationRequested]);
+
     return (
         <ScrollView style={styles.container}>
 
@@ -79,10 +90,10 @@ const DetailsScreen = ({ route, navigation }) => {
             <Text style={styles.commonNames}>{detailsFromResults.common_name}</Text>
 
             {/* Quadros */}
-            {loadingPerenual ? (
+            {loadingPerenualPT ? (
                 <ActivityIndicator size="large" style={styles.loading} />
             ) : (
-                detailsFromPerenual && detailsFromPerenual.ciclo ? (
+                detailsFromPerenualPT && detailsFromPerenualPT.ciclo ? (
                     <View style={styles.gridContainer}>
                         {/* CICLO */}
                         <View style={styles.gridBox}>
@@ -91,7 +102,7 @@ const DetailsScreen = ({ route, navigation }) => {
                                 <Text style={styles.gridTitle}>Ciclo</Text>
                             </View>
 
-                            <Text style={styles.gridText}>{detailsFromPerenual.ciclo}</Text>
+                            <Text style={styles.gridText}>{detailsFromPerenualPT.ciclo}</Text>
                         </View>
 
                         {/* REGA */}
@@ -101,7 +112,7 @@ const DetailsScreen = ({ route, navigation }) => {
                                 <Text style={styles.gridTitle}>Rega</Text>
                             </View>
 
-                            <Text style={styles.gridText}>{detailsFromPerenual.rega}</Text>
+                            <Text style={styles.gridText}>{detailsFromPerenualPT.rega}</Text>
                         </View>
 
                         {/* SOL */}
@@ -111,7 +122,7 @@ const DetailsScreen = ({ route, navigation }) => {
                                 <Text style={styles.gridTitle}>Sol</Text>
                             </View>
 
-                            <Text style={styles.gridText}>{detailsFromPerenual.sol}</Text>
+                            <Text style={styles.gridText}>{detailsFromPerenualPT.sol}</Text>
                         </View>
 
                         {/* MANUTENÇÃO */}
@@ -121,7 +132,7 @@ const DetailsScreen = ({ route, navigation }) => {
                                 <Text style={styles.gridTitle}>Manutenção</Text>
                             </View>
 
-                            <Text style={styles.gridText}>{detailsFromPerenual.manutencao}</Text>
+                            <Text style={styles.gridText}>{detailsFromPerenualPT.manutencao}</Text>
                         </View>
 
                     </View>
@@ -142,32 +153,30 @@ const DetailsScreen = ({ route, navigation }) => {
             )}
 
             {/* Instruções */}
-            {loadingPerenual ? (
-               <ActivityIndicator size="large" style={styles.loading} />
+            {loadingPerenualPT ? (
+                <ActivityIndicator size="large" style={styles.loading} />
             ) : (
-                detailsFromPerenual && detailsFromPerenual.ciclo ? (
+                detailsFromPerenualPT ? (
                     <View>
                         <Text style={styles.description}>
                             <Text style={styles.bold}>Rega: </Text>
-                            { detailsFromPerenual.regaLongo }
+                            { detailsFromPerenualPT.regaExplicacao }
                         </Text>
 
                         <Text style={styles.description}>
                             <Text style={styles.bold}>Sol: </Text>
-                            { detailsFromPerenual.solLongo }
+                            { detailsFromPerenualPT.solExplicacao }
                         </Text>
 
                         <Text style={styles.description}>
                             <Text style={styles.bold}>Poda: </Text>
-                            { detailsFromPerenual.podaLongo }
+                            { detailsFromPerenualPT.podaExplicacao }
                         </Text>
                     </View>
                 ) : (
                     <Text style={styles.description}>Nenhum dado encontrado para esta planta.</Text>
                 )
             )}
-
-
         </ScrollView>
     );
 };
